@@ -1,0 +1,12 @@
+k8s-cert-lab
+Copyright 2026 Nauman Munir
+
+All practice scenarios in this repository are originally authored and mapped to
+the published CNCF exam curricula (CKA v1.35, CKAD v1.35, CKS v1.34) at
+https://github.com/cncf/curriculum.
+
+No content from paid exam simulators or individually-licensed third-party
+scenario platforms is reproduced, quoted, or closely paraphrased here.
+
+Where a scenario adapts permissively-licensed third-party material, the source
+and its licence are recorded in that scenario's meta.yaml.
