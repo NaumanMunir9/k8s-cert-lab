@@ -11,7 +11,12 @@ SHELLCHECK_MIN=0.11.0
 YQ_MIN=4.40.0
 JQ_MIN=1.7
 
-ver() { sed -nE 's/.*?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' <<<"$1" | head -1; }
+# Take the FIRST version triple in the string. `sed -nE 's/.*?(...)/\1/p'` was wrong here:
+# ERE has no lazy quantifier, so `.*?` is greedy `.*` plus an optional `?` and it captures
+# the LAST triple — `kind v0.32.0 go1.26.3 ...` yielded Go's 1.26.3, so the kind floor went
+# unenforced and v0.23.0 would have passed. Empty output on no match is intended;
+# require_cmd treats it as "not installed".
+ver() { grep -oE '[0-9]+\.[0-9]+\.[0-9]+' <<<"$1" | head -1; }
 
 failed=0
 
@@ -24,7 +29,9 @@ check yq         "$YQ_MIN"         "$(ver "$(yq --version 2>/dev/null || true)")
 check jq         "$JQ_MIN"         "$(ver "$(jq --version 2>/dev/null || true)")"
 
 if command -v kubectl >/dev/null 2>&1; then
-  log_info "kubectl: $(kubectl version --client -o json 2>/dev/null | jq -r .clientVersion.gitVersion)"
+  # `|| true` keeps a jq failure from killing the script under pipefail+errexit, so a
+  # missing jq still produces jq's own per-tool error line above instead of a silent exit.
+  log_info "kubectl: $(kubectl version --client -o json 2>/dev/null | jq -r .clientVersion.gitVersion 2>/dev/null || true)"
 else
   log_error "kubectl: not installed"
   failed=1
