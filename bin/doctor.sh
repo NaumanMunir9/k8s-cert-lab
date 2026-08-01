@@ -2,6 +2,7 @@
 # Verifies host tooling meets the version floors this repo depends on.
 
 set -Eeuo pipefail
+# shellcheck source-path=SCRIPTDIR/../lib
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/common.sh"
 
 KIND_MIN=0.32.0
