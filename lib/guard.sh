@@ -10,6 +10,9 @@ set -Eeuo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 ALLOWED_PROFILES=(solo trio nocni hardened etcdlab)
+# readonly so a caller cannot widen the allowed set before calling guard_init.
+# Without it, `ALLOWED_PROFILES=(production); guard_init production` succeeded.
+readonly -a ALLOWED_PROFILES
 
 guard_init() {
   local profile="${1:-}"
@@ -35,6 +38,12 @@ guard_assert_context() {
     kind-*) ;;
     *) die "refusing to continue: context '${KUBE_CONTEXT}' is not a kind context" ;;
   esac
+
+  # The kind- prefix check above is only a naming convention. Re-derive the expected
+  # kubeconfig path from the profile and refuse anything else, so a KUBECONFIG exported
+  # after guard_init cannot smuggle in a foreign cluster under a kind- context name.
+  [ "${KUBECONFIG}" = "${WORK_DIR}/kubeconfig-${KIND_PROFILE}" ] \
+    || die "refusing to continue: KUBECONFIG is ${KUBECONFIG}, expected ${WORK_DIR}/kubeconfig-${KIND_PROFILE}"
 
   [ -f "${KUBECONFIG}" ] || die "refusing to continue: kubeconfig ${KUBECONFIG} does not exist — is the cluster up?"
 

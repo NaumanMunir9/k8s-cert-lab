@@ -38,20 +38,48 @@ setup() {
   done
 }
 
+# Assert the SPECIFIC message. Every die in guard.sh contains "refusing", so matching
+# only that word cannot prove which branch fired — the test would still pass if the
+# wrong check rejected the context.
 @test "guard_assert_context dies when the context is not a kind context" {
   guard_init solo
   KUBE_CONTEXT="gke_example-corp-prd_northamerica-northeast1_prd"
   run guard_assert_context
   [ "$status" -ne 0 ]
-  [[ "$output" == *"refusing"* ]]
+  [[ "$output" == *"is not a kind context"* ]]
 }
 
-@test "guard_assert_context dies when the context does not exist in the kubeconfig" {
+# The `kind-` prefix check alone is security-by-naming-convention: a kubeconfig whose
+# context is merely NAMED kind-solo but whose server is a public IP passed the guard and
+# reached kubectl. This covers the KUBECONFIG-substitution defence.
+@test "guard_assert_context refuses a substituted KUBECONFIG even when the context is named kind-" {
   guard_init solo
-  export KUBECONFIG="${BATS_TEST_TMPDIR}/empty-kubeconfig"
-  printf 'apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []\n' > "$KUBECONFIG"
+  export KUBECONFIG="${BATS_TEST_TMPDIR}/impostor"
+  printf 'apiVersion: v1\nkind: Config\nclusters:\n- cluster: {server: "https://34.95.0.1:443"}\n  name: notkind\ncontexts:\n- context: {cluster: notkind, user: u}\n  name: kind-solo\ncurrent-context: kind-solo\nusers:\n- name: u\n  user: {}\n' > "$KUBECONFIG"
   run guard_assert_context
   [ "$status" -ne 0 ]
+  [[ "$output" == *"KUBECONFIG is"* ]]
+}
+
+# These two use the REAL repo-local kubeconfig path, because guard_assert_context now
+# requires KUBECONFIG to equal it — so they skip when a solo cluster is actually up
+# rather than disturbing its kubeconfig.
+@test "guard_assert_context dies when the kubeconfig file does not exist" {
+  guard_init solo
+  [ -f "$KUBECONFIG" ] && skip "a solo cluster is up; not disturbing its kubeconfig"
+  run guard_assert_context
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"does not exist"* ]]
+}
+
+@test "guard_assert_context dies when the active context does not match" {
+  guard_init solo
+  [ -f "$KUBECONFIG" ] && skip "a solo cluster is up; not disturbing its kubeconfig"
+  printf 'apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []\n' > "$KUBECONFIG"
+  run guard_assert_context
+  rm -f "$KUBECONFIG"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"active context is"* ]]
 }
 
 @test "kc refuses to run when the context is not a kind context" {
