@@ -6,7 +6,11 @@ LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
 # shellcheck source-path=SCRIPTDIR/../lib
 source "${LIB}/guard.sh"
 
-MIN_DISK_GIB="${LAB_MIN_DISK_GIB:-16}"
+# Measured 2026-08-04: cached node images 0.9 GiB, a running trio adds ~2 GiB of writable
+# layers. 8 GiB is ~2.5x the peak need. Do NOT set this to whatever `df` happens to report
+# today — the previous 18 and 16 GiB values were, and each blocked every run once free
+# space drifted by 1 GiB.
+MIN_DISK_GIB="${LAB_MIN_DISK_GIB:-8}"
 OBS_MIB=400
 
 profile="${1:-}"
@@ -16,6 +20,8 @@ recording=0
 [ "${2:-}" = "--recording" ] && recording=1
 [ "${LAB_RECORDING:-0}" = "1" ] && recording=1
 
+# Measured idle 2026-08-04: trio = 783 MiB (control-plane 541, workers 119 + 123). These
+# floors stay above that on purpose — scenario workloads add pods on top of an idle cluster.
 case "$profile" in
   solo|hardened|etcdlab) need_mib=1000 ;;
   nocni)                 need_mib=1350 ;;
