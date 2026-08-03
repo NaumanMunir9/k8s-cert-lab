@@ -6,7 +6,7 @@ LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
 # shellcheck source-path=SCRIPTDIR/../lib
 source "${LIB}/guard.sh"
 
-MIN_DISK_GIB="${LAB_MIN_DISK_GIB:-18}"
+MIN_DISK_GIB="${LAB_MIN_DISK_GIB:-16}"
 OBS_MIB=400
 
 profile="${1:-}"
