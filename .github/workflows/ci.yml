@@ -38,8 +38,11 @@ jobs:
         run: |
           sudo wget -qO /usr/local/bin/kind \
             https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-linux-amd64
-          sudo chmod +x /usr/local/bin/kind
+          sudo wget -qO /usr/local/bin/kubectl \
+            "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo chmod +x /usr/local/bin/kind /usr/local/bin/kubectl
           sudo sysctl -w fs.inotify.max_user_instances=512
+          bin/doctor.sh
       - name: Lint and run offline unit tests
         run: |
           bats tests/lint.bats tests/guard.bats tests/cluster.bats \

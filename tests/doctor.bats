@@ -10,6 +10,9 @@ setup() {
 
 @test "doctor.sh exits 0 when host tooling meets the floors" {
   run "${REPO_ROOT}/bin/doctor.sh"
+  # Print on failure: without this the only diagnostic is "[ $status -eq 0 ] failed", which
+  # says nothing about WHICH floor the host missed.
+  echo "$output"
   [ "$status" -eq 0 ]
 }
 
