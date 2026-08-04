@@ -1,0 +1,41 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: hardened
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
+    # Hop 1: host files -> node container
+    extraMounts:
+      - hostPath: ./profiles/hardened/audit-policy.yaml
+        containerPath: /etc/kubernetes/audit/audit-policy.yaml
+        readOnly: true
+      - hostPath: ./profiles/hardened/encryption-config.yaml
+        containerPath: /etc/kubernetes/encryption/encryption-config.yaml
+        readOnly: true
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            audit-policy-file: /etc/kubernetes/audit/audit-policy.yaml
+            audit-log-path: /var/log/kubernetes/audit.log
+            audit-log-maxsize: "50"
+            audit-log-maxbackup: "1"
+            encryption-provider-config: /etc/kubernetes/encryption/encryption-config.yaml
+          # Hop 2: node paths -> API server static pod
+          extraVolumes:
+            - name: audit-policy
+              hostPath: /etc/kubernetes/audit
+              mountPath: /etc/kubernetes/audit
+              readOnly: true
+              pathType: DirectoryOrCreate
+            - name: audit-log
+              hostPath: /var/log/kubernetes
+              mountPath: /var/log/kubernetes
+              readOnly: false
+              pathType: DirectoryOrCreate
+            - name: encryption-config
+              hostPath: /etc/kubernetes/encryption
+              mountPath: /etc/kubernetes/encryption
+              readOnly: true
+              pathType: DirectoryOrCreate

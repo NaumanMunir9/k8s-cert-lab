@@ -1,0 +1,13 @@
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+# NOTE: this AES key is a PUBLIC, FIXED test value committed on purpose so the
+# lab is reproducible. It protects nothing. Never reuse it anywhere real.
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: lab-key-1
+              secret: c2VjcmV0aXNzZWN1cmVsYWJrZXkxMjM0NTY3ODkwQUI=
+      - identity: {}

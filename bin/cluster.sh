@@ -29,15 +29,14 @@ case "$action" in
 
     guard_assert_context
 
-    log_info "waiting for all nodes to be Ready"
-    kc wait --for=condition=Ready nodes --all --timeout=180s
-
-    # nocni has no CNI by design, so CoreDNS cannot schedule until the viewer installs one.
-    if [ "$profile" != "nocni" ]; then
+    if [ "$profile" = "nocni" ]; then
+      log_warn "profile 'nocni' has no CNI — nodes stay NotReady and CoreDNS stays Pending until you install one"
+      kc get nodes
+    else
+      log_info "waiting for all nodes to be Ready"
+      kc wait --for=condition=Ready nodes --all --timeout=180s
       log_info "waiting for CoreDNS"
       kc -n kube-system rollout status deployment/coredns --timeout=180s
-    else
-      log_warn "profile 'nocni' has no CNI installed — CoreDNS will stay Pending until you install one"
     fi
 
     kc get nodes -o wide
