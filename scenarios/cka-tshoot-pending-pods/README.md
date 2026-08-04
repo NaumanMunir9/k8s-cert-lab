@@ -17,9 +17,22 @@ Constraints: keep `replicas: 3`, do not change the image, do not add nodes.
 ## Run it
 
 ```bash
+bin/cluster.sh  up     trio
 bin/scenario.sh setup  cka-tshoot-pending-pods
 bin/scenario.sh verify cka-tshoot-pending-pods   # fails until you fix it
 ```
+
+Then point your shell at this cluster, and only this cluster, before running any
+`kubectl` command below:
+
+```bash
+export KUBECONFIG="$PWD/.work/kubeconfig-trio"
+kubectl config current-context   # must print: kind-trio
+```
+
+Every `kubectl` command in this walkthrough assumes that export. Without it `kubectl`
+uses whatever context your shell already has — which on a work machine may be a real
+production cluster.
 
 ## Walkthrough
 
