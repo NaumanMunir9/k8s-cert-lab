@@ -23,6 +23,16 @@ jobs:
           sudo wget -qO /usr/local/bin/yq \
             https://github.com/mikefarah/yq/releases/download/v4.49.2/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
+
+      # doctor.bats runs bin/doctor.sh against this runner as if it were a workstation, so
+      # the runner must satisfy the same floors: kind is not preinstalled, and the default
+      # inotify instance limit is below what doctor.sh requires.
+      - name: Satisfy the host-tooling floors doctor.sh checks
+        run: |
+          sudo wget -qO /usr/local/bin/kind \
+            https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-linux-amd64
+          sudo chmod +x /usr/local/bin/kind
+          sudo sysctl -w fs.inotify.max_user_instances=512
       - name: Lint and run offline unit tests
         run: |
           bats tests/lint.bats tests/guard.bats tests/cluster.bats \
