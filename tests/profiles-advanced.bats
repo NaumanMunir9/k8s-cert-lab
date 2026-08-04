@@ -16,12 +16,14 @@ setup() {
   [[ "$patch" == *"encryption-provider-config"* ]]
 }
 
+# The patch is an embedded YAML string, so substring matching on it cannot tell hop 2 from
+# hop 1: every one of these directories ALSO appears in extraArgs. Parse the embedded
+# document and read hostPath out of extraVolumes specifically, or the test cannot fail.
 @test "hardened completes hop 2: every extraArgs file path has a matching extraVolume" {
-  patch="$(yq -r '.nodes[0].kubeadmConfigPatches[0]' "${REPO_ROOT}/profiles/hardened.yaml")"
-  [[ "$patch" == *"extraVolumes"* ]]
-  for d in /etc/kubernetes/audit /var/log/kubernetes /etc/kubernetes/encryption; do
-    [[ "$patch" == *"$d"* ]]
-  done
+  run bash -c "yq -r '.nodes[0].kubeadmConfigPatches[0]' '${REPO_ROOT}/profiles/hardened.yaml' \
+    | yq -r '[.apiServer.extraVolumes[].hostPath] | sort | join(\",\")'"
+  [ "$status" -eq 0 ]
+  [ "$output" = "/etc/kubernetes/audit,/etc/kubernetes/encryption,/var/log/kubernetes" ]
 }
 
 @test "hardened completes hop 1: policy and encryption files are mounted into the node" {

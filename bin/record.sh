@@ -7,6 +7,9 @@ BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source-path=SCRIPTDIR/../lib
 source "${BIN}/../lib/guard.sh"
 
+# Deliberately under $HOME: the previous default hardcoded one machine's username and
+# external-drive UUID, which is both wrong for every other reader and an identifier leak
+# in a public repo. Point LAB_FOOTAGE_DIR at an external drive to keep footage off the OS disk.
 FOOTAGE_DIR="${LAB_FOOTAGE_DIR:-${HOME}/k8s-lab-footage}"
 
 profile="${1:-}"

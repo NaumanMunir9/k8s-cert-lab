@@ -21,12 +21,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck bats
           sudo wget -qO /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            https://github.com/mikefarah/yq/releases/download/v4.49.2/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
       - name: Lint and run offline unit tests
         run: |
           bats tests/lint.bats tests/guard.bats tests/cluster.bats \
-               tests/scenario.bats tests/profiles-advanced.bats
+               tests/scenario.bats tests/profiles-advanced.bats \
+               tests/doctor.bats tests/preflight.bats tests/record.bats \
+               tests/coverage.bats
 
   discover:
     runs-on: ubuntu-latest
@@ -56,7 +58,7 @@ jobs:
           sudo wget -qO /usr/local/bin/kind \
             https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-linux-amd64
           sudo wget -qO /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            https://github.com/mikefarah/yq/releases/download/v4.49.2/yq_linux_amd64
           sudo chmod +x /usr/local/bin/kind /usr/local/bin/yq
           kind version
 
@@ -93,9 +95,11 @@ jobs:
       - name: Diagnostics on failure
         if: failure()
         run: |
-          kubectl config get-contexts || true
-          for ns in $(kubectl get ns -o name 2>/dev/null | cut -d/ -f2); do
-            kubectl -n "$ns" get pods -o wide 2>/dev/null || true
+          # Read the profile from the scenario rather than assuming trio: a hardcoded
+          # kubeconfig silently produces empty diagnostics for any other profile.
+          profile=$(yq -r '.profile' "scenarios/${{ matrix.slug }}/meta.yaml")
+          export KUBECONFIG=".work/kubeconfig-${profile}"
+          kubectl --context "kind-${profile}" config get-contexts || true
+          for ns in $(kubectl --context "kind-${profile}" get ns -o name 2>/dev/null | cut -d/ -f2); do
+            kubectl --context "kind-${profile}" -n "$ns" get pods -o wide 2>/dev/null || true
           done
-        env:
-          KUBECONFIG: .work/kubeconfig-trio

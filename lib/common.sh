@@ -29,18 +29,3 @@ require_cmd() {
   log_error "${name}: ${actual} is older than required ${min}"
   return 1
 }
-
-# wait_for <timeout_seconds> <description> <command...>
-# Polls command every 2s until it exits 0, or dies after timeout.
-wait_for() {
-  local timeout="$1" desc="$2"; shift 2
-  local elapsed=0
-  until "$@" >/dev/null 2>&1; do
-    if [ "$elapsed" -ge "$timeout" ]; then
-      die "timed out after ${timeout}s waiting for: ${desc}"
-    fi
-    sleep 2
-    elapsed=$((elapsed + 2))
-  done
-  log_info "ready: ${desc}"
-}

@@ -6,7 +6,6 @@ set -Eeuo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/common.sh"
 
 KIND_MIN=0.32.0
-HELM_MIN=4.0.0
 SHELLCHECK_MIN=0.11.0
 YQ_MIN=4.40.0
 JQ_MIN=1.7
@@ -23,7 +22,6 @@ failed=0
 check() { require_cmd "$1" "$2" "$3" || failed=1; }
 
 check kind       "$KIND_MIN"       "$(ver "$(kind version 2>/dev/null || true)")"
-check helm       "$HELM_MIN"       "$(ver "$(helm version --short 2>/dev/null || true)")"
 check shellcheck "$SHELLCHECK_MIN" "$(ver "$(shellcheck --version 2>/dev/null | grep -i version: || true)")"
 check yq         "$YQ_MIN"         "$(ver "$(yq --version 2>/dev/null || true)")"
 check jq         "$JQ_MIN"         "$(ver "$(jq --version 2>/dev/null || true)")"

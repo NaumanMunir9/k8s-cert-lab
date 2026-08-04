@@ -48,8 +48,8 @@ has the task statement and a full walkthrough.
 - `fs.inotify.max_user_instances` >= 512 (multi-node clusters fail with
   "too many open files" below this; `max_user_watches` needs no change)
 
-Run `bin/doctor.sh` to check all of the above, plus `helm`, `shellcheck`,
-`yq`, `jq`, and `kubectl`, against the versions this repo depends on.
+Run `bin/doctor.sh` to check all of the above, plus `shellcheck`, `yq`,
+`jq`, and `kubectl`, against the versions this repo depends on.
 
 ## Profiles
 

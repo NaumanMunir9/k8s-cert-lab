@@ -39,9 +39,9 @@ free on the footage partition.
    directory name, hostname, or path other than the current working
    directory is visible in the prompt, stop and fix it before recording.
 4. In OBS, set the recording output path to the footage directory
-   (`$LAB_FOOTAGE_DIR`, defaulting to
-   `${HOME}/k8s-lab-footage`) — not the default OBS
-   output folder, which lives on the OS disk.
+   (`$LAB_FOOTAGE_DIR`, defaulting to `~/k8s-lab-footage`) — not the default
+   OBS output folder. Set `LAB_FOOTAGE_DIR` to a path on an external drive
+   if you do not want footage accumulating on the OS disk.
 
 ## OBS capture scope
 

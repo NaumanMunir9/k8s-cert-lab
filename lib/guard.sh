@@ -9,10 +9,14 @@ set -Eeuo pipefail
 # shellcheck source-path=SCRIPTDIR
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
-ALLOWED_PROFILES=(solo trio nocni hardened etcdlab)
 # readonly so a caller cannot widen the allowed set before calling guard_init.
-# Without it, `ALLOWED_PROFILES=(production); guard_init production` succeeded.
-readonly -a ALLOWED_PROFILES
+# Without it, `ALLOWED_PROFILES=(production); guard_init production` succeeded. The
+# already-readonly check matters because tests source this file more than once, and
+# re-declaring a readonly array is a fatal error under `set -e`.
+if ! readonly -p 2>/dev/null | grep -q 'declare -ar ALLOWED_PROFILES'; then
+  ALLOWED_PROFILES=(solo trio nocni hardened etcdlab)
+  readonly -a ALLOWED_PROFILES
+fi
 
 guard_init() {
   local profile="${1:-}"
@@ -66,10 +70,11 @@ guard_assert_context() {
 
 # All cluster access goes through this. Asserts on every single call.
 kc() {
-  guard_assert_context
   # kubectl lets the LAST occurrence of a flag win, so a caller passing its own
   # --context/--kubeconfig/--server would silently override the pinned target and defeat
-  # every assertion above. Refuse rather than append.
+  # every assertion below. Refuse rather than append. This runs BEFORE the context
+  # assertions on purpose: kc's own arguments are always checkable, while the assertions
+  # can exit first for an unrelated reason (no cluster up yet) and mask a bad call.
   local a
   for a in "$@"; do
     case "$a" in
@@ -77,5 +82,6 @@ kc() {
         die "refusing to continue: kc does not accept ${a%%=*} — the target is fixed by guard_init" ;;
     esac
   done
+  guard_assert_context
   kubectl --context "$KUBE_CONTEXT" "$@"
 }

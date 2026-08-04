@@ -14,6 +14,13 @@ CKA_DOMAINS=(
   "Workloads and Scheduling|15%"
   "Storage|10%"
 )
+CKAD_DOMAINS=(
+  "Application Environment, Configuration and Security|25%"
+  "Application Design and Build|20%"
+  "Application Deployment|20%"
+  "Services and Networking|20%"
+  "Application Observability and Maintenance|15%"
+)
 CKS_DOMAINS=(
   "Minimize Microservice Vulnerabilities|20%"
   "Supply Chain Security|20%"
@@ -52,6 +59,7 @@ report() {
 printf '# Curriculum coverage\n'
 printf '\nSource: https://github.com/cncf/curriculum\n'
 report CKA v1.35 "${CKA_DOMAINS[@]}"
+report CKAD v1.35 "${CKAD_DOMAINS[@]}"
 report CKS v1.34 "${CKS_DOMAINS[@]}"
 
 total=$(find "${REPO_ROOT}/scenarios" -mindepth 1 -maxdepth 1 -type d | wc -l)

@@ -35,10 +35,12 @@ setup() {
   [[ "$output" == *"disk"* ]]
 }
 
-@test "preflight.sh fails when the memory requirement exceeds what is available" {
-  run env LAB_MEM_OVERRIDE_MIB=99999999 "${REPO_ROOT}/bin/preflight.sh" solo
+# LAB_MEM_OVERRIDE_MIB substitutes for the AVAILABLE reading, so a LOW value is what
+# drives the failure branch. A high value exercises the pass branch instead.
+@test "preflight.sh fails when available memory is below the profile floor" {
+  run env LAB_MEM_OVERRIDE_MIB=1 "${REPO_ROOT}/bin/preflight.sh" solo
   [ "$status" -ne 0 ]
-  [[ "$output" == *"memory"* ]]
+  [[ "$output" == *"only 1 MiB available"* ]]
 }
 
 @test "recording mode fails when a work kube context is active in the environment" {

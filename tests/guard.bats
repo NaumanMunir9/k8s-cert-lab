@@ -87,4 +87,20 @@ setup() {
   KUBE_CONTEXT="gke_example-corp-prd_northamerica-northeast1_prd"
   run kc get nodes
   [ "$status" -ne 0 ]
+  [[ "$output" == *"is not a kind context"* ]]
+}
+
+# kubectl resolves the LAST occurrence of a flag, so a caller appending its own --context
+# would silently retarget the command. Verified live: `kubectl --context kind-solo
+# --context bogus-prod get nodes` resolves bogus-prod.
+@test "kc refuses a caller-supplied target override" {
+  guard_init solo
+  for flag in --context --kubeconfig --server -s; do
+    run kc get nodes "$flag" anything
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"kc does not accept"* ]]
+  done
+  run kc get nodes --context=bogus
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"kc does not accept --context"* ]]
 }

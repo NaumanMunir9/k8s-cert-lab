@@ -28,7 +28,7 @@ setup() {
 @test "doctor.sh fails when a required tool is absent from PATH" {
   shim="$BATS_TEST_TMPDIR/bin"
   mkdir -p "$shim"
-  for c in bash env sed head sort grep dirname mkdir sysctl docker kubectl helm shellcheck yq jq; do
+  for c in bash env sed head sort grep dirname mkdir sysctl docker kubectl shellcheck yq jq; do
     p=$(type -P "$c") && ln -sf "$p" "$shim/$c"
   done
   rm -f "$shim/kind"

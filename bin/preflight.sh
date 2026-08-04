@@ -42,17 +42,14 @@ else
 fi
 
 # --- memory ---
-avail_mib="${LAB_MEM_OVERRIDE_MIB:-}"
-if [ -z "$avail_mib" ]; then
-  avail_mib=$(awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo)
-  need_check=$need_mib
+# LAB_MEM_OVERRIDE_MIB substitutes for the AVAILABLE reading, matching its name — it lets
+# a test drive both branches without touching the host. It previously replaced the
+# REQUIREMENT instead, which is the opposite of what the name says.
+avail_mib="${LAB_MEM_OVERRIDE_MIB:-$(awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo)}"
+if [ "$avail_mib" -ge "$need_mib" ]; then
+  log_info "memory: ${avail_mib} MiB available (profile '${profile}' needs ${need_mib} MiB)"
 else
-  need_check="$avail_mib"; avail_mib=$(awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo)
-fi
-if [ "$avail_mib" -ge "$need_check" ]; then
-  log_info "memory: ${avail_mib} MiB available (profile '${profile}' needs ${need_check} MiB)"
-else
-  log_error "memory: only ${avail_mib} MiB available, profile '${profile}' needs ${need_check} MiB — close the browser or pick a smaller profile"
+  log_error "memory: only ${avail_mib} MiB available, profile '${profile}' needs ${need_mib} MiB — close the browser or pick a smaller profile"
   failed=1
 fi
 

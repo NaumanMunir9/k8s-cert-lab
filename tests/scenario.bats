@@ -30,7 +30,8 @@ setup() {
 
 @test "every scenario meta.yaml declares the required fields" {
   for d in "${REPO_ROOT}"/scenarios/*/; do
-    for field in slug title profile cert curriculum_version domain difficulty attribution; do
+    for field in slug title profile cert curriculum_version domain domain_weight \
+                 difficulty time_budget_minutes namespace attribution; do
       value="$(yq -r ".${field}" "${d}meta.yaml")"
       [ -n "$value" ]
       [ "$value" != "null" ]
