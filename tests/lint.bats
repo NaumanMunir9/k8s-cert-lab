@@ -6,6 +6,7 @@ setup() {
 
 @test "all shell scripts pass shellcheck" {
   run bash -c "cd '${REPO_ROOT}' && find bin lib scenarios -name '*.sh' -print0 | xargs -0 shellcheck -x"
+  echo "$output"
   [ "$status" -eq 0 ]
 }
 
@@ -15,6 +16,7 @@ setup() {
 # runs each @test in a subshell it cannot see into.
 @test "all bats test files pass shellcheck" {
   run bash -c "cd '${REPO_ROOT}' && shellcheck -x -s bash -e SC2016,SC2030,SC2031 tests/*.bats"
+  echo "$output"
   [ "$status" -eq 0 ]
 }
 

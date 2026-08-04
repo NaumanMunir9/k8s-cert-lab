@@ -16,13 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # shellcheck comes from the upstream release, NOT apt: apt ships an older version that
+      # is below bin/doctor.sh's 0.11.0 floor AND reports a different finding set, so an
+      # apt-installed runner disagrees with a developer's machine about what "lint clean" is.
       - name: Install shellcheck, bats and yq
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck bats
+          sudo apt-get install -y bats xz-utils
+          wget -qO- https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz \
+            | tar -xJ --strip-components=1 -C /tmp shellcheck-v0.11.0/shellcheck
+          sudo install -m 0755 /tmp/shellcheck /usr/local/bin/shellcheck
           sudo wget -qO /usr/local/bin/yq \
             https://github.com/mikefarah/yq/releases/download/v4.49.2/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
+          shellcheck --version
 
       # doctor.bats runs bin/doctor.sh against this runner as if it were a workstation, so
       # the runner must satisfy the same floors: kind is not preinstalled, and the default
