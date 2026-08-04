@@ -1,0 +1,101 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, to catch scenario rot from upstream Kubernetes changes.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck, bats and yq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck bats
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      - name: Lint and run offline unit tests
+        run: |
+          bats tests/lint.bats tests/guard.bats tests/cluster.bats \
+               tests/scenario.bats tests/profiles-advanced.bats
+
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      scenarios: ${{ steps.list.outputs.scenarios }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          json=$(find scenarios -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+                 | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "scenarios=${json}" >> "$GITHUB_OUTPUT"
+
+  scenario:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        slug: ${{ fromJSON(needs.discover.outputs.scenarios) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kind, kubectl and yq
+        run: |
+          sudo wget -qO /usr/local/bin/kind \
+            https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-linux-amd64
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/kind /usr/local/bin/yq
+          kind version
+
+      - name: Raise inotify limits
+        run: |
+          sudo sysctl -w fs.inotify.max_user_instances=512
+          sudo sysctl -w fs.inotify.max_user_watches=524288
+
+      - name: Setup — provision the broken state
+        run: bin/scenario.sh setup "${{ matrix.slug }}"
+        env:
+          LAB_MIN_DISK_GIB: 5
+
+      - name: Verify must FAIL — proves the scenario is genuinely broken
+        env:
+          LAB_MIN_DISK_GIB: 5
+        run: |
+          if bin/scenario.sh verify "${{ matrix.slug }}"; then
+            echo "::error::verify.sh passed on the broken state — the scenario is not actually broken"
+            exit 1
+          fi
+          echo "verify correctly failed on the broken state"
+
+      - name: Solve — apply the reference solution
+        run: bin/scenario.sh solve "${{ matrix.slug }}"
+        env:
+          LAB_MIN_DISK_GIB: 5
+
+      - name: Verify must PASS — proves the reference solution is correct
+        run: bin/scenario.sh verify "${{ matrix.slug }}"
+        env:
+          LAB_MIN_DISK_GIB: 5
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl config get-contexts || true
+          for ns in $(kubectl get ns -o name 2>/dev/null | cut -d/ -f2); do
+            kubectl -n "$ns" get pods -o wide 2>/dev/null || true
+          done
+        env:
+          KUBECONFIG: .work/kubeconfig-trio
