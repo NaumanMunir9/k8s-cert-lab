@@ -1,6 +1,6 @@
 # Recording setup
 
-This workstation also holds live a large classifieds site production GKE credentials
+A work laptop typically also holds live production cloud credentials
 (`~/.kube/config`, AWS SSO tokens, GCP ADC, Jira API tokens) and will be on
 camera. `bin/record.sh <profile>` hands you a shell that cannot see any of
 that: no inherited `KUBECONFIG` pointing at the real file, work credential
