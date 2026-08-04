@@ -40,6 +40,20 @@ setup() {
   [[ "$output" == *"kind: not installed"* ]]
 }
 
+# jq prints `jq-1.7` — two components, no patch. A three-part-only version pattern found
+# nothing here and doctor.sh reported "jq: not installed" on a host that had it.
+@test "doctor.sh accepts a two-component version like jq-1.7" {
+  run bash -c "
+    source '${REPO_ROOT}/lib/common.sh'
+    ver() { grep -oE '[0-9]+\\.[0-9]+(\\.[0-9]+)?' <<<\"\$1\" | head -1; }
+    v=\$(ver 'jq-1.7')
+    [ \"\$v\" = '1.7' ] || { echo \"parsed '\$v', expected 1.7\"; exit 1; }
+    require_cmd jq 1.7 \"\$v\"
+  "
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
 @test "common.sh require_cmd accepts an equal version" {
   source "${REPO_ROOT}/lib/common.sh"
   run require_cmd kind 0.32.0 0.32.0

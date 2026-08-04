@@ -15,7 +15,10 @@ JQ_MIN=1.7
 # the LAST triple — `kind v0.32.0 go1.26.3 ...` yielded Go's 1.26.3, so the kind floor went
 # unenforced and v0.23.0 would have passed. Empty output on no match is intended;
 # require_cmd treats it as "not installed".
-ver() { grep -oE '[0-9]+\.[0-9]+\.[0-9]+' <<<"$1" | head -1; }
+# Matches a two- OR three-part version. Two-part matters: `jq --version` prints `jq-1.7`
+# with no patch component, so a three-part-only pattern found nothing and require_cmd
+# reported "jq: not installed" on a host where jq was installed and new enough.
+ver() { grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' <<<"$1" | head -1; }
 
 failed=0
 

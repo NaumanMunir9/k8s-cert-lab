@@ -22,7 +22,7 @@ jobs:
       - name: Install shellcheck, bats and yq
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats xz-utils
+          sudo apt-get install -y bats xz-utils jq
           wget -qO- https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz \
             | tar -xJ --strip-components=1 -C /tmp shellcheck-v0.11.0/shellcheck
           sudo install -m 0755 /tmp/shellcheck /usr/local/bin/shellcheck
