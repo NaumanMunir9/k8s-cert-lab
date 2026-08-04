@@ -1,0 +1,11 @@
+slug: cka-tshoot-pending-pods
+title: A Deployment's pods never leave Pending
+profile: trio
+cert: CKA
+curriculum_version: v1.35
+domain: Troubleshooting
+domain_weight: 30%
+difficulty: 2
+time_budget_minutes: 8
+namespace: tshoot-pending
+attribution: original
