@@ -11,6 +11,12 @@ FOOTAGE_DIR="${LAB_FOOTAGE_DIR:-${HOME}/k8s-lab-footage}"
 
 profile="${1:-}"
 [ -n "$profile" ] || die "usage: record.sh <profile> [--check]"
+
+# Capture the INBOUND kubeconfig before guard_init overwrites it, otherwise preflight's
+# work-context check inspects the repo-local path guard_init just set and can never fire.
+LAB_INBOUND_KUBECONFIG="${KUBECONFIG:-}"
+export LAB_INBOUND_KUBECONFIG
+
 guard_init "$profile"
 
 check_only=0

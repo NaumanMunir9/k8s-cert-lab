@@ -51,10 +51,31 @@ guard_assert_context() {
   current="$(kubectl config current-context 2>/dev/null || true)"
   [ "$current" = "$KUBE_CONTEXT" ] \
     || die "refusing to continue: active context is '${current:-<none>}', expected '${KUBE_CONTEXT}'"
+
+  # Path and name are both forgeable: `kind export kubeconfig` MERGES into an existing
+  # file, and .work/ is gitignored and never content-checked, so a file at the pinned
+  # path can hold a kind-<profile> context pointing anywhere. A kind API server is always
+  # published on a host loopback port, so anything else is not a local cluster.
+  local server
+  server="$(kubectl config view -o "jsonpath={.clusters[?(@.name=='$(kubectl config view -o "jsonpath={.contexts[?(@.name=='${KUBE_CONTEXT}')].context.cluster}")')].cluster.server}" 2>/dev/null || true)"
+  case "$server" in
+    https://127.0.0.1:*|https://localhost:*|https://0.0.0.0:*|'https://[::1]:'*) ;;
+    *) die "refusing to continue: context '${KUBE_CONTEXT}' points at '${server:-<none>}', which is not a local kind API server" ;;
+  esac
 }
 
 # All cluster access goes through this. Asserts on every single call.
 kc() {
   guard_assert_context
+  # kubectl lets the LAST occurrence of a flag win, so a caller passing its own
+  # --context/--kubeconfig/--server would silently override the pinned target and defeat
+  # every assertion above. Refuse rather than append.
+  local a
+  for a in "$@"; do
+    case "$a" in
+      --context|--context=*|--kubeconfig|--kubeconfig=*|--server|--server=*|-s)
+        die "refusing to continue: kc does not accept ${a%%=*} — the target is fixed by guard_init" ;;
+    esac
+  done
   kubectl --context "$KUBE_CONTEXT" "$@"
 }

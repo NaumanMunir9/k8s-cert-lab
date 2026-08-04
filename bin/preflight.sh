@@ -72,8 +72,12 @@ fi
 
 # --- recording-only checks ---
 if [ "$recording" -eq 1 ]; then
-  if [ -n "${KUBECONFIG:-}" ] && [[ "$KUBECONFIG" == *"/.kube/config"* ]]; then
-    log_error "recording: KUBECONFIG points at ${KUBECONFIG} — a work context must not be active while recording"
+  # Prefer the caller's pre-guard_init value when it passed one: by the time record.sh
+  # invokes this, its own KUBECONFIG is already the repo-local path, so checking that
+  # would always pass.
+  kube_to_check="${LAB_INBOUND_KUBECONFIG-${KUBECONFIG:-}}"
+  if [ -n "$kube_to_check" ] && [[ "$kube_to_check" == *"/.kube/config"* ]]; then
+    log_error "recording: KUBECONFIG points at ${kube_to_check} — a work context must not be active while recording"
     failed=1
   fi
   for secret in "$HOME/.jira.d/config.yml" "$HOME/.aws/credentials" \
